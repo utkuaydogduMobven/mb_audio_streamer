@@ -37,9 +37,9 @@ flutter:
     platforms:
       android:
         package: com.mobven.audiostreamer.mb_audio_streamer
-        pluginClass: MbAudioStreamerPlugin
+        pluginClass: MBAudioStreamerPlugin
       ios:
-        pluginClass: MbAudioStreamerPlugin
+        pluginClass: SwiftMbAudioStreamerPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
