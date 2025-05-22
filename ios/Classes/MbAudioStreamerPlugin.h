@@ -1,4 +1,4 @@
 #import <Flutter/Flutter.h>
 
-@interface AudioStreamerPlugin : NSObject<FlutterPlugin>
+@interface MbAudioStreamerPlugin : NSObject<FlutterPlugin>
 @end
