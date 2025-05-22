@@ -31,7 +31,6 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
   }
 
   private func setupNotifications() {
-    // Get the default notification center instance.
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(handleInterruption(notification:)),
@@ -40,8 +39,7 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
   }
 
   @objc func handleInterruption(notification: Notification) {
-    // If no eventSink to emit events to, do nothing (wait)
-    if eventSink == nil {
+    guard let sink = eventSink else {
       return
     }
 
@@ -53,10 +51,9 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
     }
 
     switch type {
-    case .began: ()
+    case .began:
+      break
     case .ended:
-      // An interruption ended. Resume playback, if appropriate.
-
       guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else {
         return
       }
@@ -64,27 +61,22 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
       if options.contains(.shouldResume) {
         startRecording(sampleRate: preferredSampleRate)
       }
-
     default:
-      eventSink!(
+      sink(
         FlutterError(
-          code: "100", message: "Recording was interrupted",
+          code: "100",
+          message: "Recording was interrupted",
           details: "Another process interrupted recording."))
     }
   }
 
-  // Handle stream emitting (Swift => Flutter)
   private func emitValues(values: [Float]) {
-
-    // If no eventSink to emit events to, do nothing (wait)
-    if eventSink == nil {
+    guard let sink = eventSink else {
       return
     }
-    // Emit values count event to Flutter
-    eventSink!(values)
+    sink(values)
   }
 
-  // Event Channel: On Stream Listen
   public func onListen(
     withArguments arguments: Any?,
     eventSink: @escaping FlutterEventSink
@@ -99,7 +91,6 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
     return nil
   }
 
-  // Event Channel: On Stream Cancelled
   public func onCancel(withArguments arguments: Any?) -> FlutterError? {
     NotificationCenter.default.removeObserver(self)
     eventSink = nil
@@ -108,15 +99,20 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
   }
 
   func startRecording(sampleRate: Int?) {
+    guard let sink = eventSink else {
+      print("⚠️ EventSink is nil. Aborting startRecording.")
+      return
+    }
+
     engine = AVAudioEngine()
 
     do {
       try AVAudioSession.sharedInstance().setCategory(
-        AVAudioSession.Category.playAndRecord, options: .mixWithOthers)
+        AVAudioSession.Category.playAndRecord,
+        options: .mixWithOthers)
       try AVAudioSession.sharedInstance().setActive(true)
 
       if let sampleRateNotNull = sampleRate {
-        // Try to set sample rate
         try AVAudioSession.sharedInstance().setPreferredSampleRate(Double(sampleRateNotNull))
       }
 
@@ -124,19 +120,19 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
       let bus = 0
 
       input.installTap(onBus: bus, bufferSize: 22050, format: input.inputFormat(forBus: bus)) {
-        buffer, _ -> Void in
+        buffer, _ in
         let samples = buffer.floatChannelData?[0]
-        // audio callback, samples in samples[0]...samples[buffer.frameLength-1]
         let arr = Array(UnsafeBufferPointer(start: samples, count: Int(buffer.frameLength)))
         self.emitValues(values: arr)
       }
 
       try engine.start()
     } catch {
-      eventSink!(
+      sink(
         FlutterError(
-          code: "100", message: "Unable to start audio session", details: error.localizedDescription
-        ))
+          code: "100",
+          message: "Unable to start audio session",
+          details: error.localizedDescription))
     }
   }
 }
