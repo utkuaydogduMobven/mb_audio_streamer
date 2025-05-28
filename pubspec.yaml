@@ -1,7 +1,7 @@
 name: mb_audio_streamer
 description: "A new Flutter plugin project."
-version: 0.0.1
-homepage:
+version: 1.0.2
+homepage: "https://github.com/utkuaydogduMobven/mb_audio_streamer"
 
 environment:
   sdk: ^3.5.3
