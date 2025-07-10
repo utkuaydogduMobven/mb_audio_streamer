@@ -44,10 +44,22 @@ class MBAudioStreamer {
       DEFAULT_SAMPLING_RATE;
 
   /// The stream of audio samples.
-  Stream<List<double>> get audioStream => _stream ??= _noiseEventChannel
-      .receiveBroadcastStream({"sampleRate": sampleRate})
-      .map((buffer) => buffer as List<dynamic>?)
-      .map((list) => (list != null && list.isNotEmpty && list[0] is double)
-          ? list.cast<double>()
-          : list!.map((e) => e is double ? e : double.parse('$e')).toList());
+  Stream<List<double>> getAudioStream() {
+    try {
+      _stream ??= _noiseEventChannel
+          .receiveBroadcastStream({"sampleRate": sampleRate})
+          .map((buffer) => buffer as List<dynamic>?)
+          .map((list) => (list != null && list.isNotEmpty && list[0] is double)
+              ? list.cast<double>()
+              : list!
+                  .map((e) => e is double ? e : double.parse('$e'))
+                  .toList());
+    } catch (e) {
+      throw Exception('Failed to get audio stream: $e');
+    }
+    if (_stream == null) {
+      throw Exception('Failed to get audio stream: _stream is null');
+    }
+    return _stream!;
+  }
 }

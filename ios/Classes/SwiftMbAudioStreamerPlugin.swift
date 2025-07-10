@@ -74,7 +74,9 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
     guard let sink = eventSink else {
       return
     }
-    sink(values)
+    DispatchQueue.main.async {
+      sink(values)
+    }
   }
 
   public func onListen(
@@ -94,6 +96,7 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
   public func onCancel(withArguments arguments: Any?) -> FlutterError? {
     NotificationCenter.default.removeObserver(self)
     eventSink = nil
+    engine.inputNode.removeTap(onBus: 0)
     engine.stop()
     return nil
   }
@@ -112,9 +115,9 @@ public class SwiftMbAudioStreamerPlugin: NSObject, FlutterPlugin, FlutterStreamH
         options: .mixWithOthers)
       try AVAudioSession.sharedInstance().setActive(true)
 
-      if let sampleRateNotNull = sampleRate {
+      /* if let sampleRateNotNull = sampleRate {
         try AVAudioSession.sharedInstance().setPreferredSampleRate(Double(sampleRateNotNull))
-      }
+      } */
 
       let input = engine.inputNode
       let bus = 0
